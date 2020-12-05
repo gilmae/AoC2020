@@ -29,7 +29,20 @@ def seat_number code
 end
 
 seat_ids = data.map{ |code| 
-    row_number(code[0,7])[0]*8 +seat_number(code[7,2])[0]
+    row_number(code[0,7])[0]*8 +seat_number(code[7,3])[0]
 }
 
-p seat_ids.sort.last
+seat_ids = seat_ids.sort
+
+puts seat_ids.last
+
+sum_of_seat_numbers = (seat_ids.first..seat_ids.last).reduce(0) { |memo, i |
+    memo + i
+}
+
+sum_of_actual_seats = seat_ids.reduce(0){ |m,i| 
+    m + i
+}
+
+puts sum_of_seat_numbers - sum_of_actual_seats
+
