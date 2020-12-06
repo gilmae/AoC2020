@@ -6,11 +6,9 @@ groups = data.split("\n\n")
 
 # Count of distinct answers after unioning all member's answers
 def part1 groups
-    yeses = groups.map { | g |
+    return groups.map { | g |
         g.gsub(/[^a-z]/,"").chars.uniq.length
-    }
-
-    return yeses.reduce(0){ |m,v|
+    }.reduce(0){ |m,v|
         m+v
     }
 end
@@ -22,9 +20,7 @@ def part2 groups
         shared_answers = members.reduce("abcdefghijklmnopqrstuvwxyz".chars) { |m,v |
             m & v.chars
         }.uniq.length
-    }
-
-    return yeses.reduce(0){ |m,v|
+    }.reduce(0){ |m,v|
         m+v
     }
 end
