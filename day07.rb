@@ -66,6 +66,16 @@ bag_contents.keys.each { |t|
 
 p bags_containing_mine.length
 
+def get_contents_of_bag bag, bag_contents
+    return 1 if bag_contents[bag].nil?
+    return 1 + bag_contents[bag].map {|b| # that 1+ introduces an off by one where the bag is the outer bag...deal with it outside
+        b.number.to_i * get_contents_of_bag(b.bag_type, bag_contents)
+    }.reduce(0){|m,v| m+v}
+end
+
+p get_contents_of_bag("shiny gold bag", bag_contents) - 1 # off by one error...ignore myself
+
+
 
 
 
