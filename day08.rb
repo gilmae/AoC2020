@@ -1,6 +1,16 @@
 require './helper.rb'
+require 'optparse'
+
+options = {}
+OptionParser.new do |opt|
+  opt.on('--input INPUT') { |o| options[:input] = o }
+  opt.on('--analyse TRUE|FALSE') {|o| options[:analyse] = o == 'TRUE'}
+end.parse!
+
 include Helper
-data = get_data("#{__FILE__}".gsub(/\.rb/, ".input"))
+input = options[:input] || "#{__FILE__}".gsub(/\.rb/, ".input")
+
+data = get_data(input)
 
 class Instruction
     attr_accessor :command, :value, :has_executed
@@ -85,10 +95,10 @@ instructions = data.map{|l|
 
 c = Computer.new
 c.process instructions
-
 puts c.accumulator
-p instructions[c.instruction], c.instruction
 
-a = Analyser.new
-a.process instructions
+if options[:analyse]
+    a = Analyser.new
+    a.process instructions
+end
 
