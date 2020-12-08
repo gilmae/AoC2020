@@ -23,7 +23,7 @@ class Instruction
 end
 
 class Computer
-    attr_accessor :accumulator, :instruction, :last_instruction
+    attr_accessor :accumulator, :instruction, :last_instruction, :executed
 
     def initialize
         @accumulator = 0
@@ -32,9 +32,10 @@ class Computer
     end
 
     def process instructions
+        @executed = {}
         while @instruction < instructions.length
             i = instructions[@instruction]
-            break if i.has_executed
+            break if @executed[@instruction]
             @last_instruction = @instruction
 
             if i.command ==  "nop"
@@ -45,28 +46,19 @@ class Computer
             elsif i.command == "jmp"
                 @instruction += i.value
             end
-            i.has_executed = true
+            @executed[@last_instruction] = true
         end
     end
-end
 
-class Analyser
-    attr_accessor :accumulator, :instruction, :last_instruction, :executed
-
-    def initialize
-        @accumulator = 0
-        @instruction = 0
-        @last_instruction = 0
+    def analyse instructions
         @executed = {}
-    end
 
-    def process instructions
         while @instruction < instructions.length
             i = instructions[@instruction]
             if @executed[@instruction]
                 puts "INFINITE LOOP DETECTED"
                 break
-            elsif @instruction >= instructions.length
+            elsif @instruction >= instructions.length-1
                 puts "NO MORE INSTRUCTIONS"
                 break
             end
@@ -98,7 +90,6 @@ c.process instructions
 puts c.accumulator
 
 if options[:analyse]
-    a = Analyser.new
-    a.process instructions
+    c = Computer.new
+    c.analyse instructions
 end
-
