@@ -4,7 +4,6 @@ require 'optparse'
 options = {}
 OptionParser.new do |opt|
   opt.on('--input INPUT') { |o| options[:input] = o }
-  opt.on('--analyse TRUE|FALSE') {|o| options[:analyse] = o == 'TRUE'}
 end.parse!
 
 include Helper
@@ -26,57 +25,43 @@ class Computer
     attr_accessor :accumulator, :instruction, :last_instruction, :executed
 
     def initialize
+
+    end
+
+    def process instructions, allow_corruption_fixes = false
+        @executed = {}
         @accumulator = 0
         @instruction = 0
         @last_instruction = 0
-    end
 
-    def process instructions
-        @executed = {}
         while @instruction < instructions.length
             i = instructions[@instruction]
             break if @executed[@instruction]
             @last_instruction = @instruction
 
             if i.command ==  "nop"
-                @instruction+=1
+                if allow_corruption_fixes && has_next_instruction_been_seen?(@instruction+1)
+                    @instruction += i.value
+                else
+                    @instruction+=1
+                end
             elsif i.command == "acc"
                 @accumulator += i.value
                 @instruction+=1
             elsif i.command == "jmp"
-                @instruction += i.value
+                if allow_corruption_fixes && has_next_instruction_been_seen?(@instruction + i.value)
+                    @instruction+=1
+                else
+                    @instruction += i.value
+                end
+                
             end
             @executed[@last_instruction] = true
         end
     end
 
-    def analyse instructions
-        @executed = {}
-
-        while @instruction < instructions.length
-            i = instructions[@instruction]
-            if @executed[@instruction]
-                puts "INFINITE LOOP DETECTED"
-                break
-            elsif @instruction >= instructions.length-1
-                puts "NO MORE INSTRUCTIONS"
-                break
-            end
-            
-            if i.command ==  "nop"
-                @last_instruction = @instruction
-                @instruction+=1
-            elsif i.command == "acc"
-                @accumulator += i.value
-                @last_instruction = @instruction
-                @instruction+=1
-            elsif i.command == "jmp"
-                @last_instruction = @instruction
-                @instruction += i.value
-            end
-            puts "#{i.command}\t#{i.value}\t#{@accumulator}\t#{@instruction}\t#{@last_instruction}"
-            @executed[@last_instruction] = true
-        end
+    def has_next_instruction_been_seen? i
+        @executed[i]
     end
 end
 
@@ -85,11 +70,12 @@ instructions = data.map{|l|
     Instruction.new(parts[0], parts[1].to_i)
 }
 
+#Part 1
 c = Computer.new
 c.process instructions
 puts c.accumulator
 
-if options[:analyse]
-    c = Computer.new
-    c.analyse instructions
-end
+# Part 2
+c = Computer.new
+c.process instructions, true
+puts c.accumulator
