@@ -34,3 +34,36 @@ jolt_gaps[3] += 1 # Device is always 3 higher than highest adapter
 
 puts jolt_gaps[1], jolt_gaps[3]
 puts jolt_gaps[1] * jolt_gaps[3]
+
+def can_connect? adapter1, adapter2
+    return false if adapter1.nil? || adapter2.nil?
+    gap = (adapter1  - adapter2).abs
+    gap >=1 && gap <=3
+end
+
+exists = {}
+adapters = data.sort
+adapters.each_with_index{|v,i|exists[v] = i}
+ways = {}
+ways[data.length-1] = 1
+
+index = data.length-2
+
+while index >= 0
+    sum = 0 
+    (1..3).each{|diff|
+        adapter_exists_at = exists[adapters[index] + diff]    
+        next if adapter_exists_at.nil?
+        sum += ways[adapter_exists_at]
+    }
+    ways[index] = sum
+    index -=1
+end
+
+total_ways = 0
+(1..3).each{|diff|
+        adapter_exists_at = exists[diff]    
+        next if adapter_exists_at.nil?
+        total_ways += ways[adapter_exists_at]
+    }
+p total_ways
