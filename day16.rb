@@ -1,4 +1,3 @@
-require './helper.rb'
 require 'optparse'
 
 options = {}
@@ -6,10 +5,9 @@ OptionParser.new do |opt|
   opt.on('--input INPUT') { |o| options[:input] = o }
 end.parse!
 
-include Helper
 input = options[:input] || "#{__FILE__}".gsub(/\.rb/, ".input")
 
-data = get_data(input).map(&:strip)
+data = File.readlines("inputs/#{input}").map(&:strip)
 
 def is_valid_for_any_field fields, value
   fields.keys.each {|f|
@@ -33,8 +31,8 @@ while data[index] != ""
   classes = parts[1].split(" or ")
   field_dict = {}
   classes.each{|c|
-    minmax = c.split("-")
-    (minmax[0].to_i..minmax[1].to_i).each{|i|
+    minmax = c.split("-").map(&:to_i)
+    (minmax[0]..minmax[1]).each{|i|
       field_dict[i] = true
     }
   }
@@ -48,7 +46,7 @@ my_data = data[index].split(",").map(&:to_i)
 
 index +=2
 
-# Part ! 
+# Part 1
 other_tickets = data.slice(index+1..-1)
 p other_tickets.map {|ticket|
   ticket_fields = ticket.split(",").map(&:to_i)
@@ -60,6 +58,7 @@ p other_tickets.map {|ticket|
   field_validities.sum
 }.sum
 
+# Part 2
 valid_tickets = other_tickets.select {|ticket|
   ticket_fields = ticket.split(",").map(&:to_i)
   # for each field in ticket, iterate through fields and find at least one field it matches
@@ -80,24 +79,22 @@ field_positions_on_ticket = field_names.map{|i| nil}
 while field_names.length > 0  && field_names.select{|name| name =~ /departure/}.length > 0
   my_data.each_with_index {|_,i|
   
-  next unless field_positions_on_ticket[i].nil?
+    next unless field_positions_on_ticket[i].nil?
 
     possible_fields = valid_tickets.reduce(fields.keys){|memo, ticket|
       memo.intersection(valid_fields_for_value(fields, ticket[i], field_names))
     }
     
-    
     if possible_fields.length == 1
-       field_positions_on_ticket[i] = possible_fields[0]
-       field_names.delete(possible_fields[0])
-     end
+      field_positions_on_ticket[i] = possible_fields[0]
+      field_names.delete(possible_fields[0])
+    end
   }
 end
+
+# The fields we can find the position for. We hates them.
 p field_names
 
-sum = 1
-field_positions_on_ticket.each_with_index {|name,i|
-  sum *= my_data[i] if name =~ /departure/
-}
-
-p sum
+p field_positions_on_ticket.map.with_index {|name,i|
+  name =~ /departure/ ? my_data[i] : 1
+}.reduce(&:*)
