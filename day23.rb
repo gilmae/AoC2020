@@ -1,5 +1,6 @@
 require './helper.rb'
 require 'optparse'
+require './circular_linked_list.rb'
 
 options = {}
 OptionParser.new do |opt|
@@ -13,83 +14,108 @@ data = get_data(input)
 
 cups = data[0].split("").map(&:to_i)
 
+Min, Max = cups.minmax
 
-# class Ring
-#   attr_accessor :size
+game = CircularList.new
+index = {}
+cups.each {|c| 
+  index[c] = game.insert c
+}
+
+current_cup = game.head
+
+
+def print_cups game, current
+  ret = []
   
-#   def initialize size, values = nil
-#     @buffer = Array(size, nil)
-
-#     if !values.nil? && values.is_a? Array
-#       values.each {|a| @buffer.push a}
-#     end
-#   end
-
-#   def is_full?
-
-#   end
-# end
-
-current_cup_pointer = 0
-
-def pickup_cups cups, cur
-  pointer = cur
-  pickup = []
-  (1..3).each {|i|
-    pickup.push (cur+i)%cups.length
-  }
-  pickup
+  game.full_scan {|c| ret.push(c===current ? "(#{c.data})" : c.data.to_s)}
+  puts "cups: #{ret.join(", ")}"
 end
 
-def find_next_destination cups, cur, pickup
-  min,max = cups.minmax
-  pickup_values = pickup.map {|p| cups[p]}
-  if cur>=cups.length
-    pos = cups.last-1
-  else
-    pos = cups[cur] -1
-  end
+def pickup_cups game, current_cup
+  picked_up = []
+  3.times {|_|
+    picked_up.push current_cup.next.data
+    game.remove_next current_cup
+  }
 
-  while cups.index(pos).nil? || pickup_values.include?(pos)
-    if pos <= min
-      pos = max
+  picked_up
+end
+
+def find_next_destination cups, cur, pickup, index
+  possibility = cur.data-1
+  while  pickup.include?(possibility) || possibility < Min
+    
+    if possibility < Min
+      possibility = Max
       next
     end
-    pos-=1
+    possibility-=1
   end
-  return cups.index(pos)
+  return index[possibility]
 end
 
-def place_cups cups, cur, destination, pickup
-  current_cup_value = cups[cur]
-
-  destination_value = cups[destination]
-
-  pickup_values = pickup.map{|p|cups[p]}
-  pickup_values.each{|p|cups.delete(p)}
-
-  puts "Placing pickup at index #{cups.index(destination_value)}"
-  cups.insert(cups.index(destination_value)+1, pickup_values).flatten!
-
-  while cups[cur] != current_cup_value
-    cups.push cups.shift
-  end
+def place_cups game, destination, pickup, index
+  prev = destination
+  
+  pickup.each {|p|
+    prev = game.insert_next prev, p
+    index[p] = prev
+  }
 end
 
+100.times {|round|
+  puts "\n-- Move #{round+1} --"
+  print_cups game, current_cup
+  picked_up = pickup_cups game, current_cup
+  destination = find_next_destination game, current_cup, picked_up, index
+  puts "pick up: #{picked_up.join(", ")}"
+  puts "destination: #{destination.data}"
 
-100.times {|move|
-  puts "-- move #{move+1} --"
-  puts "cups: #{cups.map.with_index {|c,i| i==current_cup_pointer ? "(#{c})" : c.to_s}.join(", ")}"
-  pickup = pickup_cups cups, current_cup_pointer
-  puts "pick up: #{pickup.map{|i|cups[i].to_s}.join(", ")}"
-  destination = find_next_destination cups, current_cup_pointer, pickup
-  puts "destination: #{cups[destination]} (#{destination})"
-  place_cups cups, current_cup_pointer, destination, pickup
-  current_cup_pointer = (current_cup_pointer + 1) % cups.length
-  puts ""
+  place_cups game, destination, picked_up, index
+
+  current_cup = current_cup.next
 
 }
 
-puts "-- final --"
-puts "cups: #{cups.map.with_index {|c,i| i==current_cup_pointer ? "(#{c})" : c.to_s}.join(", ")}"
-  
+puts "\n== final =="
+print_cups game, current_cup
+
+start = index[1]
+cursor = start.next
+ret = ""
+while cursor != start
+  ret += cursor.data.to_s
+  cursor = cursor.next
+end
+
+puts ret
+
+
+# PART B
+game = CircularList.new
+index = {}
+last = nil
+cups.each {|c| 
+  index[c] = game.insert c
+  last = index[c]
+}
+
+(Max+1..1000000).each {|c|
+  index[c] = game.insert_next last, c
+  last = index[c]
+}
+Max = 1000000
+current_cup = game.head
+
+10000000.times {|round|
+  picked_up = pickup_cups game, current_cup
+  destination = find_next_destination game, current_cup, picked_up, index
+  place_cups game, destination, picked_up, index
+
+  current_cup = current_cup.next
+}
+star_cup_1 = index[1].next
+star_cup_2 = star_cup_1.next
+
+puts star_cup_1.data * star_cup_2.data
